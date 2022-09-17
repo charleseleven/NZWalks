@@ -20,7 +20,7 @@ namespace NZWalks.API.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> GetAllRegions()
+        public async Task<IActionResult> GetAllRegionsAsync()
         {
             var regions = await regionRepository.GetAllAsync();
 
@@ -44,6 +44,22 @@ namespace NZWalks.API.Controllers
             var regionsDTO = mapper.Map<List<Models.DTO.Region>>(regions);
 
             return Ok(regionsDTO);
+        }
+
+        [HttpGet]
+        [Route("{id:guid}")]
+        public async Task<IActionResult> GetRegionsAsync(Guid id)
+        {
+            var region = await regionRepository.GetAsync(id);
+            
+            if (region == null)
+            {
+                return NotFound();
+            }
+
+            var regionDTO = mapper.Map<Models.DTO.Region>(region);
+
+            return Ok(regionDTO);
         }
     }
 }
