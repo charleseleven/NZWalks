@@ -43,7 +43,7 @@ namespace NZWalks.API.Controllers
                 return NotFound();
             }
 
-            // Convert Somain object to DTO
+            // Convert Domain object to DTO
             var walkDTO = mapper.Map<Models.DTO.Walk>(walk);
 
             // Return response
