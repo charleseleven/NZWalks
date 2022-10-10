@@ -7,6 +7,7 @@ namespace NZWalks.API.Repositories
     public class WalkDifficultyRepository : IWalkDifficultyRepository
     {
         private readonly NZWalksDbContext nZWalksDbContext;
+
         public WalkDifficultyRepository(NZWalksDbContext nZWalksDbContext)
         {
             this.nZWalksDbContext = nZWalksDbContext;
@@ -14,11 +15,22 @@ namespace NZWalks.API.Repositories
 
         public async Task<WalkDifficulty> AddAsync(WalkDifficulty walkDifficulty)
         {
-            // Assign New Id
             walkDifficulty.Id = Guid.NewGuid();
-            await nZWalksDbContext.AddAsync(walkDifficulty);
+            await nZWalksDbContext.WalkDifficulty.AddAsync(walkDifficulty);
             await nZWalksDbContext.SaveChangesAsync();
             return walkDifficulty;
+        }
+
+        public async Task<WalkDifficulty> DeleteAsync(Guid id)
+        {
+            var existingWalkDifficulty = await nZWalksDbContext.WalkDifficulty.FindAsync(id);
+            if (existingWalkDifficulty != null)
+            {
+                nZWalksDbContext.WalkDifficulty.Remove(existingWalkDifficulty);
+                await nZWalksDbContext.SaveChangesAsync();
+                return existingWalkDifficulty;
+            }
+            return null;
         }
 
         public async Task<IEnumerable<WalkDifficulty>> GetAllAsync()
@@ -33,31 +45,16 @@ namespace NZWalks.API.Repositories
 
         public async Task<WalkDifficulty> UpdateAsync(Guid id, WalkDifficulty walkDifficulty)
         {
-            var existingWalkDifficulty = await nZWalksDbContext.WalkDifficulty.FirstOrDefaultAsync(x => x.Id == id);
+            var existingWalkDifficulty = await nZWalksDbContext.WalkDifficulty.FindAsync(id);
 
-            if (walkDifficulty == null)
+            if (existingWalkDifficulty == null)
             {
                 return null;
             }
 
             existingWalkDifficulty.Code = walkDifficulty.Code;
-
             await nZWalksDbContext.SaveChangesAsync();
             return existingWalkDifficulty;
-        }
-
-        public async Task<WalkDifficulty> DeleteAsync(Guid id)
-        {
-            var walkDifficulty = await nZWalksDbContext.WalkDifficulty.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (walkDifficulty == null)
-            {
-                return null;
-            }
-
-            nZWalksDbContext.WalkDifficulty.Remove(walkDifficulty);
-            await nZWalksDbContext.SaveChangesAsync();
-            return walkDifficulty;
         }
     }
 }

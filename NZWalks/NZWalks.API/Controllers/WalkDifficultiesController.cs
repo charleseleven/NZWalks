@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NZWalks.API.Repositories;
 
@@ -18,91 +19,91 @@ namespace NZWalks.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllWalkDifficultiesAsync()
+        //[Authorize(Roles = "reader")]
+        public async Task<IActionResult> GetAllWalkDifficulties()
         {
-            // Fetch data from database - domail WalkDifficulty
-            var walkDifficulties = await walkDifficultyRepository.GetAllAsync();
+            var walkDifficultiesDomain = await walkDifficultyRepository.GetAllAsync();
 
-            // Convert Domain WalkDiffilcuties to DTO WalkDiffilcuties
-            var walkDifficultiesDTO = mapper.Map<List<Models.DTO.WalkDifficulty>>(walkDifficulties);
+            // Convert Domain to DTOs
+            var walkDifficultiesDTO = mapper.Map<List<Models.DTO.WalkDifficulty>>(walkDifficultiesDomain);
 
-            // Return response
             return Ok(walkDifficultiesDTO);
         }
 
-       [HttpGet]
-       [Route("{id:guid}")]
-       [ActionName("GetWalkDifficultyAsync")]
-       public async Task<IActionResult> GetWalkDifficultyAsync(Guid id)
+        [HttpGet]
+        [Route("{id:guid}")]
+        [ActionName("GetWalkDifficultyById")]
+        //[Authorize(Roles = "reader")]
+        public async Task<IActionResult> GetWalkDifficultyById(Guid id)
         {
-            // Get WalkDifficulty Domain from database
             var walkDifficulty = await walkDifficultyRepository.GetAsync(id);
+            if (walkDifficulty == null)
+            {
+                return NotFound();
+            }
 
-            // Conver Domain object to DTO
+            // Convert Domain to DTOs
             var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficulty);
 
-            // Return response
             return Ok(walkDifficultyDTO);
-
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddWalkDifficultyAsync([FromBody] Models.DTO.AddWalkDifficultyRequest addWalkDifficultyRequest)
+        //[Authorize(Roles = "writer")]
+        public async Task<IActionResult> AddWalkDifficultyAsync(
+            Models.DTO.AddWalkDifficultyRequest addWalkDifficultyRequest)
         {
-            // Validate the incoming request
+            // validate incoming request
             //if (!ValidateAddWalkDifficultyAsync(addWalkDifficultyRequest))
             //{
             //    return BadRequest(ModelState);
             //}
 
-            // Convert DTO to Domain Object
-            var walkDifficulty = new Models.Domain.WalkDifficulty()
+            // Convert DTO to Domain model
+            var walkDifficultyDomain = new Models.Domain.WalkDifficulty
             {
-                Code = addWalkDifficultyRequest.Code,
+                Code = addWalkDifficultyRequest.Code
             };
 
-            // Pass Domain object to Repository to persist this
-            walkDifficulty = await walkDifficultyRepository.AddAsync(walkDifficulty);
+            // Call repository
+            walkDifficultyDomain = await walkDifficultyRepository.AddAsync(walkDifficultyDomain);
 
-            // Convert back to DTO
-            var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficulty);
+            // Convert Domain to DTO
+            var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficultyDomain);
 
-            // Send DTO response back to Client
-            return CreatedAtAction(nameof(GetWalkDifficultyAsync), new { id = walkDifficultyDTO.Id }, walkDifficultyDTO);
+            // Return response
+            return CreatedAtAction(nameof(GetWalkDifficultyById),
+                new { id = walkDifficultyDTO.Id }, walkDifficultyDTO);
         }
 
         [HttpPut]
         [Route("{id:guid}")]
-        public async Task<IActionResult> UpdateWalkDifficultyAsync([FromRoute] Guid id, [FromBody] Models.DTO.UpdateWalkDifficultyRequest updateWalkDifficultyRequest)
+        //[Authorize(Roles = "writer")]
+        public async Task<IActionResult> UpdateWalkDifficultyAsync(Guid id,
+            Models.DTO.UpdateWalkDifficultyRequest updateWalkDifficultyRequest)
         {
-
             // Validate the incoming request
             //if (!ValidateUpdateWalkDifficultyAsync(updateWalkDifficultyRequest))
             //{
             //    return BadRequest(ModelState);
             //}
 
-            // Convert DTO to Domain Model
-            var walkDifficulty = new Models.Domain.WalkDifficulty()
+            // Convert DTO to Domiain Model
+            var walkDifficultyDomain = new Models.Domain.WalkDifficulty
             {
-                Code = updateWalkDifficultyRequest.Code,
+                Code = updateWalkDifficultyRequest.Code
             };
 
-            // Update WalkDifficulty using repository - (Get Domain object in response (or null)
-            walkDifficulty = await walkDifficultyRepository.UpdateAsync(id, walkDifficulty);
+            // Call repository to update
+            walkDifficultyDomain = await walkDifficultyRepository.UpdateAsync(id, walkDifficultyDomain);
 
-            // If Null the Not Found
-            if (walkDifficulty == null)
+            if (walkDifficultyDomain == null)
             {
-                return NotFound("Walk Difficulty Not Found!");
+                return NotFound();
             }
 
-            // Convert Domain back to DTO
-            var walkDifficultyDTO = new Models.DTO.WalkDifficulty()
-            {
-                Id = walkDifficulty.Id,
-                Code = walkDifficulty.Code,
-            };
+            // Convert Domain to DTO
+            var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficultyDomain);
 
             // Return response
             return Ok(walkDifficultyDTO);
@@ -110,37 +111,35 @@ namespace NZWalks.API.Controllers
 
         [HttpDelete]
         [Route("{id:guid}")]
-        public async Task<IActionResult> DeleteWalkdifficultyAsync(Guid id)
+        //[Authorize(Roles = "writer")]
+        public async Task<IActionResult> DeleteWalkDifficulty(Guid id)
         {
-            // Get WalkDifficulty from database
-            var walkDifficulty = await walkDifficultyRepository.DeleteAsync(id);
-
-            // If null NotFound
-            if (id == null)
+            var walkDifficultyDomain = await walkDifficultyRepository.DeleteAsync(id);
+            if (walkDifficultyDomain == null)
             {
-                return NotFound("Walk Difficulty Not Found");
+                return NotFound();
             }
 
-            // Convert response back to DTO
-            var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficulty);
-
+            // Convert to DTO
+            var walkDifficultyDTO = mapper.Map<Models.DTO.WalkDifficulty>(walkDifficultyDomain);
             return Ok(walkDifficultyDTO);
-
-
         }
 
-        #region
+        #region Private methods
+
         private bool ValidateAddWalkDifficultyAsync(Models.DTO.AddWalkDifficultyRequest addWalkDifficultyRequest)
         {
             if (addWalkDifficultyRequest == null)
             {
-                ModelState.AddModelError(nameof(addWalkDifficultyRequest), $"{nameof(addWalkDifficultyRequest)} cannot be empty");
+                ModelState.AddModelError(nameof(addWalkDifficultyRequest),
+                    $"{nameof(addWalkDifficultyRequest)} is required.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(addWalkDifficultyRequest.Code))
             {
-                ModelState.AddModelError(nameof(addWalkDifficultyRequest.Code), $"{nameof(addWalkDifficultyRequest.Code)} is required.");
+                ModelState.AddModelError(nameof(addWalkDifficultyRequest.Code),
+                    $"{nameof(addWalkDifficultyRequest.Code)} is required.");
             }
 
             if (ModelState.ErrorCount > 0)
@@ -149,21 +148,22 @@ namespace NZWalks.API.Controllers
             }
 
             return true;
-
         }
+
 
         private bool ValidateUpdateWalkDifficultyAsync(Models.DTO.UpdateWalkDifficultyRequest updateWalkDifficultyRequest)
         {
-
             if (updateWalkDifficultyRequest == null)
             {
-                ModelState.AddModelError(nameof(updateWalkDifficultyRequest), $"{nameof(updateWalkDifficultyRequest)} cannot be empty");
+                ModelState.AddModelError(nameof(updateWalkDifficultyRequest),
+                    $"{nameof(updateWalkDifficultyRequest)} is required.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(updateWalkDifficultyRequest.Code))
             {
-                ModelState.AddModelError(nameof(updateWalkDifficultyRequest.Code), $"{nameof(updateWalkDifficultyRequest.Code)} is required.");
+                ModelState.AddModelError(nameof(updateWalkDifficultyRequest.Code),
+                    $"{nameof(updateWalkDifficultyRequest.Code)} is required.");
             }
 
             if (ModelState.ErrorCount > 0)
@@ -173,7 +173,7 @@ namespace NZWalks.API.Controllers
 
             return true;
         }
-
         #endregion
+
     }
 }
